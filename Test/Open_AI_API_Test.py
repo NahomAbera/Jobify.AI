@@ -1,7 +1,8 @@
 from openai import OpenAI
 
-client = OpenAI(api_key="")
+client = OpenAI()
 def classify_email(email_content):
+    
     prompt = f"""
     You are an AI assistant that classifies emails related to job applications. 
     Please classify the following email and extract key details:
