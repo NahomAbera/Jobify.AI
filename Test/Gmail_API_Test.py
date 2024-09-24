@@ -51,26 +51,9 @@ def get_emails(service):
             for part in parts:
                 if part.get('mimeType') == 'text/plain':
                     body = base64.urlsafe_b64decode(part['body']['data']).decode('utf-8')
-            print(f"Subject: {subject}")
-            print(f"From: {sender}")
+            # print(f"Subject: {subject}")
+            # print(f"From: {sender}")
             print(f"Body: {body}\n")
-
-
-def process_email(mime_msg):
-    subject = mime_msg['subject']
-    sender = mime_msg['from']
-
-    if mime_msg.is_multipart():
-        for part in mime_msg.walk():
-            if part.get_content_type() == 'text/plain':
-                text = part.get_payload(decode=True).decode('utf-8')
-                break
-    else:
-        text = mime_msg.get_payload(decode=True).decode('utf-8')
-    print(f"Subject: {subject}")
-    print(f"From: {sender}")
-    print(f"Body: {text}\n")
-
 
 def main():
     service = authenticate_gmail()
