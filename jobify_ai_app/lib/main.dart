@@ -6,7 +6,7 @@ import 'pages/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
- await Firebase.initializeApp();
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => LoginPage(),
         '/signup': (context) => SignUpPage(),
-        '/home': (context) => HomePage(),
+        '/home': (context) => DashboardPage(),
       },
     );
   }
