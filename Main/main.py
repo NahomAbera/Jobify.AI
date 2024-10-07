@@ -11,8 +11,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 import firebase_admin
 from firebase_admin import credentials, firestore
 from openai import OpenAI
+from bs4 import BeautifulSoup
 
-client = OpenAI(api_key="")
+client = OpenAI("")
 gmail_credentials_path = r""
 firebase_cred_path = ""
 cred = credentials.Certificate(firebase_cred_path)
@@ -50,10 +51,11 @@ def get_last_update_timestamp(user_id):
 
 def update_last_update_timestamp(user_id, timestamp):
     """Update the Firestore with the last email processing timestamp."""
-    doc_ref = db.collection('Users').document(user_id).collection('Last_Update').document('timestamp')
-    doc_ref.set({
-        'timestamp': datetime.fromtimestamp(timestamp)
-    })
+    # doc_ref = db.collection('Users').document(user_id).collection('Last_Update').document('timestamp')
+    # doc_ref.set({
+    #     'timestamp': datetime.fromtimestamp(timestamp)
+    # })
+    pass
 
 def get_emails(service, user_id):
     """Fetch emails from the last read timestamp to now."""
@@ -120,20 +122,43 @@ def process_email(service, message, user_id):
             update_last_update_timestamp(user_id, email_timestamp)
 
 def get_email_body(payload):
-    """Extract the plain text body from the email payload."""
+    """Extract and clean the plain text body from the email payload, skipping images."""
     if 'parts' in payload:
         for part in payload['parts']:
             if part.get('mimeType') == 'text/plain':
                 data = part['body'].get('data')
                 if data:
                     body = base64.urlsafe_b64decode(data).decode('utf-8')
-                    return body
+                    return clean_email_content(body)
+            elif part.get('mimeType') == 'text/html':
+                data = part['body'].get('data')
+                if data:
+                    html_content = base64.urlsafe_b64decode(data).decode('utf-8')
+                    return clean_html_content(html_content)
+            elif 'parts' in part:
+                nested_body = get_email_body(part)
+                if nested_body:
+                    return nested_body
     else:
         data = payload.get('body', {}).get('data')
         if data:
             body = base64.urlsafe_b64decode(data).decode('utf-8')
-            return body
+            return clean_email_content(body)
     return None
+
+def clean_html_content(html_content):
+    """Clean HTML content to extract the text, removing images, styles, and scripts."""
+    soup = BeautifulSoup(html_content, 'html.parser')
+    for tag in soup(['style', 'script', 'img']):
+        tag.decompose()
+    clean_text = soup.get_text(separator=' ')
+    clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+    
+    return clean_text
+
+def clean_email_content(content):
+    """Clean any extra spaces or line breaks from email content."""
+    return content.strip() 
 
 def truncate_email_body(body):
     """Truncate the email body to fit within the model's context limit."""
